@@ -9,8 +9,16 @@ import UIKit
 
 class ViewController: UIViewController {
     
+    //variables
     var score = 0
+    var timer = Timer()
+    var counter = 0
+    var birdArray = [UIImageView]()
+    var hideTimer = Timer()
+    var highScore = 0
+    
 
+    //Views
     @IBOutlet weak var timeLabel: UILabel!
     @IBOutlet weak var scoreLabel: UILabel!
     @IBOutlet weak var highScoreLabel: UILabel!
@@ -26,12 +34,26 @@ class ViewController: UIViewController {
     
     
     
+    
     override func viewDidLoad() {
         super.viewDidLoad()
        
         scoreLabel.text = "Score: \(score)"
         
+        //highscore
         
+        let storedHighScore = UserDefaults.standard.object(forKey: "highscore")
+        
+        if storedHighScore == nil {
+            highScore = 0
+            highScoreLabel.text = "HighScore: \(highScore)"
+        }
+        if let newScore = storedHighScore as? Int {
+            highScore = newScore
+            highScoreLabel.text = "HighScore: \(highScore)"
+        }
+        
+        //images
         bird1.isUserInteractionEnabled = true
         bird2.isUserInteractionEnabled = true
         bird3.isUserInteractionEnabled = true
@@ -63,12 +85,73 @@ class ViewController: UIViewController {
         bird8.addGestureRecognizer(rec8)
         bird9.addGestureRecognizer(rec9)
         
+        birdArray = [bird1,bird2,bird3,bird4,bird5,bird6,bird7,bird8,bird9]
+        
+        
+        //Timer
+        
+        counter = 15
+        timeLabel.text = String(counter)
+        
+        timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(countDown), userInfo: nil, repeats: true)
+        hideTimer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(hideBird), userInfo: nil, repeats: true)
+        
+    hideBird()
+    }
+    
+    @objc func hideBird(){
+        for bird in birdArray {
+            bird.isHidden = true
+        }
+        let random = Int(arc4random_uniform(UInt32(birdArray.count-1)))
+        birdArray[random].isHidden = false
     }
     
     @objc func increaseScore(){
         score += 1
         
         scoreLabel.text = "Score: \(score)"
+    }
+    
+    @objc func countDown(){
+        
+        counter -= 1
+        timeLabel.text = String(counter)
+        
+        if counter == 0 {
+            timer.invalidate()
+            hideTimer.invalidate()
+            
+            for bird in birdArray {
+                bird.isHidden = true
+            }
+            //high Score
+            if self.score > self.highScore {
+                self.highScore = self.score
+                highScoreLabel.text = "highScore: \(highScore)"
+                UserDefaults.standard.setValue(highScore, forKey: "highscore")
+            }
+          
+            
+            //Alert(uyarı mesajı)
+            let alert = UIAlertController(title: "time is over", message: "do you want to play again", preferredStyle: UIAlertController.Style.alert)
+            let ok = UIAlertAction(title: "OK", style: UIAlertAction.Style.cancel, handler: nil)
+            let replay = UIAlertAction(title: "REPLAY", style: UIAlertAction.Style.default) { UIAlertAction in
+                //replay func
+                
+                self.score = 0
+                self.scoreLabel.text = "Score: \(self.score)"
+                self.counter = 10
+                self.timeLabel.text = String(self.counter)
+                
+                self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.countDown), userInfo: nil, repeats: true)
+                self.hideTimer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(self.hideBird), userInfo: nil, repeats: true)
+            }
+            
+            alert.addAction(ok)
+            alert.addAction(replay)
+            self.present(alert, animated: true)
+        }
     }
 
 
